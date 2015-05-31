@@ -14,6 +14,7 @@
   "main": "./src/cli",
   "homepage": "https://github.com/foldersjs/folders",
   "dependencies": {
+    "minimist": "~1.1.0",
     "folders":"git://github.com/foldersjs/folders.git#master",
     "folders-ftp":"git://github.com/foldersjs/folders-ftp.git#master",
     "folders-ssh":"git://github.com/foldersjs/folders-ssh.git#master",
