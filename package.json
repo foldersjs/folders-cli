@@ -1,5 +1,5 @@
 {
-  "name": "folders",
+  "name": "folders-cli",
   "version": "0.0.1",
   "description": "Send and receive files and folders with various protocols",
   "repository": {
@@ -7,7 +7,7 @@
     "url": "git://github.com/foldersjs/folders-cli.git"
   },
   "author": "",
-  "license": "(Apache 2.0 OR MIT)",
+  "license": "(Apache-2.0 OR MIT)",
   "bugs": {
     "url": "https://github.com/foldersjs/folders/issues"
   },
