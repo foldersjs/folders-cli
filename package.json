@@ -7,18 +7,20 @@
     "url": "git://github.com/foldersjs/folders-cli.git"
   },
   "author": "",
-  "license": "Apache 2.0/MIT Dual Licensed",
+  "license": "(Apache 2.0 OR MIT)",
   "bugs": {
     "url": "https://github.com/foldersjs/folders/issues"
   },
   "main": "./src/cli",
   "homepage": "https://github.com/foldersjs/folders",
   "dependencies": {
-    "minimist": "~1.1.0",
-    "folders":"git://github.com/foldersjs/folders.git#master",
-    "folders-ftp":"git://github.com/foldersjs/folders-ftp.git#master",
-    "folders-ssh":"git://github.com/foldersjs/folders-ssh.git#master",
-    "folders-hdfs":"git://github.com/foldersjs/folders-hdfs.git#master"
+    "blessed": "^0.1.61",
+    "folders": "git://github.com/foldersjs/folders.git#master",
+    "folders-ftp": "git://github.com/foldersjs/folders-ftp.git#master",
+    "folders-hdfs": "git://github.com/foldersjs/folders-hdfs.git#master",
+    "folders-http": "git://github.com/foldersjs/folders-http.git#master",
+    "folders-ssh": "git://github.com/foldersjs/folders-ssh.git#master",
+    "minimist": "~1.1.0"
   },
   "devDependencies": {
     "gulp": "~3.8.10",
