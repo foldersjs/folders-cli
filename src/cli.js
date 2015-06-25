@@ -22,27 +22,35 @@ node cli.js --route=window.io
 node cli.js --listen=8090 --route=window.io
 */
 
-var cli = require('minimist')
-  , forwardingProxy = require('folders-http/forwardingProxy');
-  , standaloneProxy = require('folders-http/standaloneProxy')
 
-  , Fio 			= require('folders')
-  , server	= require('folders-http/server.js')
+var cli = require('minimist');
+var  FoldersHttp = require('folders-http');	
+var  forwardingProxy = require('folders-http/src/forwardingProxy');
+var  standaloneProxy = require('folders-http/src/standaloneProxy');
+var  Fio = require('folders');
+//var server	= require('folders-http/server.js');
 
 var cliHandler = function(){
 	var argv = cli(process.argv.slice(2));
+	var module = argv['_'][0];
 	
 	switch(true){
 		
-		case (argv['_'].indexOf('forward') > -1):
+
+		case (module == 'forward'):
 			forwardFriendly(argv)
 			break;
-		case (argv['_'].indexOf('standalone') > -1):
-			standaloneFriendly(argv)
+
+		case (module == 'standalone'):
+			standaloneFriendly(argv);
 			break;
-		case (argv['_'].indexOf('server') > -1): 
-			serverFriendly(argv)
+
+		case (module == 'server'): 
+			serverFriendly(argv);
 			break;
+		case (module == 'folders-http'):
+			httpFriendly(argv);
+			break;	
 		default:
 			// nothing we can do.  Just hope for the best.
 			return
@@ -60,8 +68,11 @@ var forwardFriendly = function(argv){
 		options.provider = t[0];
 		options.shareId  = argv['shareid'] = t[1];
 		var f = new forwardingProxy(argv);
-		var p = new provider(options,f);
-		p.fioHandler();
+		f.startProxy();
+		// no need to use provider here 
+		// provider can be used in standalone server 
+		//var p = new provider(options,f);
+		//p.fioHandler();
 		
 	}else{
 		var forward = new forwardingProxy(argv)
@@ -99,5 +110,16 @@ var serverFriendly = function(argv){
 	
 };
 
+var httpFriendly = function(argv){
+	
+	if ('provider' in argv){
+		var options = {};
+		var provider = argv['provider']
+		options.provider = Fio.provider(provider);
+		new FoldersHttp(options);
+		
+	}
+	
+}
 
-cliHandler()
+cliHandler();
