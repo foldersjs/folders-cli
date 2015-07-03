@@ -141,8 +141,13 @@ var httpFriendly = function(argv){
 	
 	if ('provider' in argv){
 		var options = {};
-		var provider = argv['provider']
-		options.provider = Fio.provider(provider);
+		var provider = argv['provider'];
+		var options = {};
+		var provider = argv['provider'] || 'local';
+		options.prefix = argv['prefix'];
+		options.host = argv['host'] || 'http://folders.io';
+		options.cb = function(err){console.log(err);}
+		options.provider = Fio.provider(provider).create(prefix);
 		new FoldersHttp(options);
 		
 	}

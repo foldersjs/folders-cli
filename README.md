@@ -15,6 +15,43 @@ Installation (use --save to save to package.json)
 npm install folders-cli
 ```
 
+folders-http
+===============
+
+This module adds a http transport layer for 'folders.io' file and folders request.
+It opens route to folders.io service which is running on remote host or on a 
+local machine.
+
+```
+node cli folders-http 
+
+```
+
+This opens a route to **http://folders.io** serving local file system by default.It gives you a 'shareid'
+
+which you can share with anyone to whom you want to share your file system
+
+
+Users on the receiving end can make following requests to access your files and folders
+
+### ls
+
+```
+curl http://folders.io/dir/shareid
+
+```
+### cat
+
+```
+curl http://folders.io/file/fileid
+```
+
+To use provider other then 'local' file system ,use **provider** switch
+
+```
+node cli folders-http --provider 'ftp' 
+```
+
 ## PROXY SERVICES
 
 There is a proxy server which can be used to forward client requests to remote hosts .
@@ -37,7 +74,7 @@ node cli forward --listen=9999
 Starts a proxy server on port 9999 and proxy all requests to folders.io
 
 ```
-node cli forward --listen=9999 --forward=folders.io
+node cli forward --listen=9999 --forward=http://folders.io
 ```
 
 ### Modes
