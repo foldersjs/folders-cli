@@ -28,6 +28,8 @@ var  FoldersHttp = require('folders-http');
 var  forwardingProxy = require('folders-http/src/forwardingProxy');
 var  Server = require('folders-http/src/standaloneServer');
 var  Fio = require('folders');
+//Used to wrap a provider in Nodejs-compatible mode!
+var FolderFs = require('folders/src/fs');
 
 
 var cliHandler = function(){
@@ -144,10 +146,21 @@ var serverFriendly = function(argv){
 			connectionString: FTPCredentialsConnString,
 			enableEmbeddedServer: true
 		}
-		var backend = Fio.provider('ftp', ftp_options).create('prefix');
+		
+		var aws_options = {
+           accessKeyId: "AKIAJLMVMW364C4IP72Q",
+           secretAccessKey : "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",
+           service : ['S3'],
+           region: ['us-east-1'],
+           bucket : ['foldersio']
+		};
+		var backendAws = Fio.provider('aws', aws_options).create('aws');
+		
+		ftp_options.backend = new FolderFs(backendAws);
+		var backend = Fio.provider('ftp', ftp_options).create('ftp');//?What is prefix!?
 		
 		console.log('backend: ', backend);
-		var server = new Server(argv,backend);
+		var server = new Server(argv, backend);
 		/*
 		if (argv['mode'] == 'LIVE'){
 			
