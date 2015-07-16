@@ -23,14 +23,14 @@ node cli.js --listen=8090 --route=window.io
 */
 
 
-var  cli = require('minimist');
-var  FoldersHttp = require('folders-http');	
-var  forwardingProxy = require('folders-http/src/forwardingProxy');
-var  Server = require('folders-http/src/standaloneServer');
-var  Fio = require('folders');
+var	 cli = require('minimist');
+var	 FoldersHttp = require('folders-http');	
+var	 forwardingProxy = require('folders-http/src/forwardingProxy');
+var	 Server = require('folders-http/src/standaloneServer');
+var	 Fio = require('folders');
 //Used to wrap a provider in Nodejs-compatible mode!
 var FolderFs = require('folders/src/fs');
-
+var Ftp = require('folders-ftp');
 
 var cliHandler = function(){
 	var argv = cli(process.argv.slice(2));
@@ -66,7 +66,7 @@ var forwardFriendly = function(argv){
 		var options = {}
 		var t = argv['provider'].split(':');
 		options.provider = t[0];
-		options.shareId  = argv['shareid'] = t[1];
+		options.shareId	 = argv['shareid'] = t[1];
 		var f = new forwardingProxy(argv);
 		f.startProxy();
 	
@@ -79,7 +79,7 @@ var forwardFriendly = function(argv){
 
 
 var standaloneFriendly = function(argv){
-    
+	
 	serverFriendly(argv);
 	
 	 // FIXME:delete below part in future 
@@ -91,7 +91,7 @@ var standaloneFriendly = function(argv){
 		var options = {}
 		var t = argv['provider'].split(':');
 		options.provider = t[0];
-		options.shareId  = t[1];
+		options.shareId	 = t[1];
 		argv.mode = 1 ;
 		var s = new standaloneProxy(argv);
 		// FIXME: Provider pattern is still a bit broken.
@@ -113,6 +113,36 @@ var standaloneFriendly = function(argv){
 	*/
 };
 
+var ssh_options = {
+		// the connection string, format: ssh//username:password@host:port
+		connectionString : "ssh://test:123456@localhost:3334",
+		// the option to start up a embedded server when inin the folders, used in test/debug
+		enableEmbeddedServer : true
+};
+
+var aws_options = {
+		   accessKeyId: "AWS access key",
+		   secretAccessKey : "AWS secret Id",
+		   service : 'S3',
+		   region: 'us-west-2',
+		   bucket: 'mybucket.test.com'
+		   
+};
+
+var ftp_options = {
+		connectionString: "ftp://localhost:3333",
+		enableEmbeddedServer: true,
+		backend:new FolderFs(Fio.provider('aws', aws_options).create('aws'))
+};
+
+var providersConfig = {
+	
+	'ftp' : ftp_options,
+	'ssh' : ssh_options,
+	'aws' : aws_options	
+};
+
+
 var serverFriendly = function(argv){
 	argv = argv || {};
 	argv['client'] = argv['_'][1] ;
@@ -127,40 +157,16 @@ var serverFriendly = function(argv){
 		console.log('provider specified');
 		var options = {}
 		var t = argv['provider'].split(':');
-		options.provider = t[0];
-		options.shareId  = t[1];
+
+		var provider = t[0];
+		var shareId  = t[1];
+		
 		argv['mode'] = 'DEBUG' ;
-		//var s = new Server(argv);
-		// FIXME: Provider pattern is still a bit broken.
-		/*
-		var p = Fio.provider('local');
-		p = new p(options,s);
-		p.fioHandler();
-		*/
 		
-		//FIXME: hardcode for FTP first
+		var serverbackend = Fio.provider(provider, providersConfig[provider]).create('prefix');//?What is prefix!?
 		
-		//var backend = Fio.provider(options.provider).create('local');
-		var FTPCredentialsConnString = "ftp://localhost:3333";
-		var ftp_options = {
-			connectionString: FTPCredentialsConnString,
-			enableEmbeddedServer: true
-		}
-		
-		var aws_options = {
-           accessKeyId: "AKIAJLMVMW364C4IP72Q",
-           secretAccessKey : "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",
-           service : ['S3'],
-           region: ['us-east-1'],
-           bucket : ['foldersio']
-		};
-		var backendAws = Fio.provider('aws', aws_options).create('aws');
-		
-		ftp_options.backend = new FolderFs(backendAws);
-		var backend = Fio.provider('ftp', ftp_options).create('ftp');//?What is prefix!?
-		
-		console.log('backend: ', backend);
-		var server = new Server(argv, backend);
+		//console.log('backend: ', backend);
+		var server = new Server(argv, serverbackend);
 		/*
 		if (argv['mode'] == 'LIVE'){
 			
