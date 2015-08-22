@@ -25,7 +25,7 @@ node cli.js --listen=8090 --route=window.io
 
 var	 cli = require('minimist');
 var	 FoldersHttp = require('folders-http');	
-var	 forwardingProxy = require('folders-http/src/forwardingProxy');
+//var	 forwardingProxy = require('folders-http/src/forwardingProxy');
 var	 Server = require('folders-http/src/standaloneServer');
 var	 Fio = require('folders');
 //Used to wrap a provider in Nodejs-compatible mode!
@@ -82,64 +82,69 @@ var standaloneFriendly = function(argv){
 	
 	serverFriendly(argv);
 	
-	 // FIXME:delete below part in future 
-		
-	/*
-	argv = argv || {};
-	if ('provider' in argv){
-		console.log('standaloneFriendly provider:', provider);
-		var options = {}
-		var t = argv['provider'].split(':');
-		options.provider = t[0];
-		options.shareId	 = t[1];
-		argv.mode = 1 ;
-		var s = new standaloneProxy(argv);
-		// FIXME: Provider pattern is still a bit broken.
-		var p = Fio.provider('local')
-		p = new p(options,s);
-		p.fioHandler();
-	} else {
-		console.log('standaloneFriendly stub');
-		var fio = new Fio();
-		var standalone = new standaloneProxy(argv);
-		var routeHandler = new Fio.router(fio);
-		var backend = new (Fio.stub());
-		standalone.startProxy(routeHandler, backend);
-		
-		//standalone.startProxy(routeHandler, backend);
-		//var routeHandler = new Fio.router(fio);
-		//standalone.startProxy(routeHandler, backend);
-	}	
-	*/
+	 
 };
 
-var ssh_options = {
-		// the connection string, format: ssh//username:password@host:port
-		connectionString : "ssh://test:123456@localhost:3334",
-		// the option to start up a embedded server when inin the folders, used in test/debug
-		enableEmbeddedServer : true
-};
 
-var aws_options = {
-		   accessKeyId: "AWS access key",
-		   secretAccessKey : "AWS secret Id",
-		   service : 'S3',
-		   region: 'us-west-2',
-		   bucket: 'mybucket.test.com'
-		   
-};
 
-var ftp_options = {
-		connectionString: "ftp://localhost:3333",
-		enableEmbeddedServer: true,
-		backend:new FolderFs(Fio.provider('aws', aws_options).create('aws'))
-};
+function configureFtp(Config, file){
 
-var providersConfig = {
 	
-	'ftp' : ftp_options,
-	'ssh' : ssh_options,
-	'aws' : aws_options	
+	var ftp_options = {} ;
+	file = file || 'ftp.json' ;
+	Config =  Config || require("../" + file); 
+	var backend  ;
+	
+	if (Config.backend.provider === 'aws'){
+	    var aws_options = configureAws(Config.backend.options);
+		backend = new FolderFs(Fio.provider('aws', aws_options).create('aws'))
+		
+	}
+	
+	// code for other backend synthetic file systems may come here 
+	
+	ftp_options.connectionString = Config.connectionString;
+	ftp_options.enableEmbeddedServer = Config.enableEmbeddedServer;
+	ftp_options.backend = backend ;
+	return ftp_options ;
+	
+};
+
+function configureAws(Config,file){
+	file = file || 'aws.json' ;
+    Config = Config || require("../" + file); 
+	var aws_options = {} ;
+	aws_options.accessKeyId = Config.accessKeyId;
+	aws_options.secretAccessKey = Config.secretAccessKey;
+	aws_options.service = Config.service;
+	aws_options.region =  Config.region;
+	aws_options.bucket =  Config.bucket	;
+	return aws_options ;
+	
+	
+};
+
+
+function configureSsh(Config, file ){
+
+	
+	var ssh_options = {} ;
+	file = file || 'ssh.json' ;
+	Config = Config || require("../" + file );
+		
+	var backend  ;
+	
+	if (Config.backend.provider === 'aws'){
+	    var aws_options = configureAws(Config.backend.options);
+		backend = new FolderFs(Fio.provider('aws', aws_options).create('aws'))
+		
+	}
+	
+	ssh_options.connectionString = Config.connectionString;
+	ssh_options.enableEmbeddedServer = Config.enableEmbeddedServer;
+	ssh_options.backend = backend ;
+	return ssh_options ;
+	
 };
 
 
@@ -155,7 +160,8 @@ var serverFriendly = function(argv){
 	if ('provider' in argv) {
 		
 		console.log('provider specified');
-		var options = {}
+		var options = {};
+		var serverbackend ;
 		var t = argv['provider'].split(':');
 
 		var provider = t[0];
@@ -163,7 +169,23 @@ var serverFriendly = function(argv){
 		
 		argv['mode'] = 'DEBUG' ;
 		
-		var serverbackend = Fio.provider(provider, providersConfig[provider]).create('prefix');//?What is prefix!?
+
+		if (provider === 'ftp'){
+			var ftp_options = configureFtp(null,argv['aws-config-file']); 
+			serverbackend = Fio.provider(provider, ftp_options).create('prefix');
+		}
+		
+		if (provider === 'ssh'){
+			var ssh_options = configureSsh(null,argv['ssh-config-file']); 
+			serverbackend = Fio.provider(provider, ssh_options).create('prefix');
+		}
+		
+		if (provider === 'aws'){
+			var aws_options = configureAws(null,argv['aws-config-file']); 
+			serverbackend = Fio.provider(provider, aws_options).create('prefix');
+		}
+		
+		 //?What is prefix!?
 		
 		//console.log('backend: ', backend);
 		var server = new Server(argv, serverbackend);

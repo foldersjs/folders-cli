@@ -1,0 +1,23 @@
+{
+
+	"connectionString": "ftp://localhost:3333",
+	"enableEmbeddedServer": "true",
+	"backend": {
+
+        "provider": "aws",
+
+        "options": { 
+
+            "accessKeyId"     : "Your access key",
+    		"secretAccessKey" : "Your access id",
+    		"service"         : "S3",
+    		"region"          : "us-west-2",
+    		"bucket"          : "mybucket.test.com",
+    		"partSize"        : 10485760,                 
+   			"queueSize"       : 5     
+
+       }
+
+    }
+
+}

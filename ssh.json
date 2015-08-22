@@ -1,0 +1,29 @@
+{
+
+	"connectionString": "ssh://test:123456@localhost:3334",
+	"enableEmbeddedServer": "true",
+	
+	/*
+	
+	TODO: can provide client and server key paths also 
+	
+	*/
+	"backend": {
+
+        "provider": "aws",
+
+        "options": { 
+
+           "accessKeyId"     : "Your Access key",
+			"secretAccessKey" : "Your Access id ",
+			"service"         : "S3",
+			"region"          : "us-west-2",
+			"bucket"          : "mybucket.test.com",
+			"partSize"        : 10485760,                 
+			"queueSize"       : 5 
+
+       }
+
+    }
+
+};
