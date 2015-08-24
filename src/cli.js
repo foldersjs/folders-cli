@@ -86,7 +86,6 @@ var standaloneFriendly = function(argv){
 };
 
 
-
 function configureFtp(Config, file){
 
 	
@@ -136,7 +135,7 @@ function configureSsh(Config, file ){
 	
 	if (Config.backend.provider === 'aws'){
 	    var aws_options = configureAws(Config.backend.options);
-		backend = new FolderFs(Fio.provider('aws', aws_options).create('aws'))
+		backend = Fio.provider('aws', aws_options).create('aws')
 		
 	}
 	
@@ -171,7 +170,7 @@ var serverFriendly = function(argv){
 		
 
 		if (provider === 'ftp'){
-			var ftp_options = configureFtp(null,argv['aws-config-file']); 
+			var ftp_options = configureFtp(null,argv['ftp-config-file']); 
 			serverbackend = Fio.provider(provider, ftp_options).create('prefix');
 		}
 		
