@@ -29,6 +29,7 @@ var Fio = require('folders');
 //Used to wrap a provider in Nodejs-compatible mode!
 var FolderFs = require('folders/src/fs');
 var Ftp = require('folders-ftp');
+var Union = Fio.union();
 
 var Cli = function (argv) {
     var self = this;
@@ -52,13 +53,10 @@ var Cli = function (argv) {
     case (module == 'folders-http'):
         self.httpFriendly(argv);
         break;
-    default:
-        // no module specified .trying to directly mount provider
-        self.providerFriendly(argv);
-        return
     }
 
 };
+
 
 Cli.prototype.standaloneFriendly = function (argv) {
 
@@ -127,8 +125,6 @@ Cli.prototype.httpFriendly = function (argv) {
 };
 
 
-
-
 Cli.prototype.forwardFriendly = function (argv) {
 
     if ('provider' in argv) {
@@ -148,11 +144,7 @@ Cli.prototype.forwardFriendly = function (argv) {
 Cli.prototype.cd = function (path) {
 
     var self = this;
-    if (!self.serverbackend) {
 
-        return cb(new Error("Error! File system not mounted"));
-
-    }
     path = path || '/';
 
     path = require('path').normalize(path);
@@ -174,21 +166,12 @@ Cli.prototype.cd = function (path) {
 
     }
 
-
-
-
 };
 
 Cli.prototype.ls = function (path, cb) {
 
     var self = this,
         lsPath;
-
-    if (!self.serverbackend) {
-
-        return cb(new Error("Error! File system not mounted"));
-
-    }
 
     path = path || self.currentDirectory;
 
@@ -198,40 +181,117 @@ Cli.prototype.ls = function (path, cb) {
 
     //FIXME: not using backend.stat to check target
 
-    if (path == '/' || path == '~') {
+    if (path[0] == '/' || path == '~') {
 
-        // change to root directory
-        lsPath = '/';
+        lsPath = require('path').resolve('/', path);
+
     } else if (path[0] != '/') {
 
         // path is relative to current directory
         // append this path to current directory and normalize it 
         lsPath = require('path').join(self.currentDirectory, path);
 
-
-    } else if (path[0] == '/') {
-
-        lsPath = require('path').resolve('/', path);
-
-
     }
-    self.serverbackend.ls(lsPath, function (err, data) {
+
+    self.union.ls(lsPath, function (err, result) {
 
         if (err) {
             return cb(err);
+
         }
 
-        data = data.map(function (x) {
+        var list = result.map(function (x) {
 
             return x.name;
-
         });
-
-        return cb(data);
+        return cb(null, list);
 
     });
 
+};
 
+
+Cli.prototype.mount = function (provider) {
+
+    var self = this;
+    if (!self.union) {
+        self.union = new Union(new Fio());
+    }
+
+    if (provider === 'aws') {
+
+
+        self.union.setup({
+            "view": "list"
+        }, [{
+            "aws": Fio.provider('aws', configureAws())
+        }]);
+    }
+
+    if (provider === 'local') {
+
+
+        self.union.setup({
+            "view": "list"
+        }, [{
+            "local": Fio.provider('local', configureLocal())
+        }]);
+    }
+
+
+};
+
+Cli.prototype.umount = function (provider) {
+
+    var self = this;
+
+	if (!self.union){
+		 return;
+	}
+    if (!provider) {
+
+        return;
+    }
+
+    self.union.umount(provider);
+};
+
+Cli.prototype.cp = function (source, destination, cb) {
+
+    var self = this;
+	
+	if (!self.union){
+		 return cb(new Error("Error ! file system not mounted"));
+	}
+	
+    if (!source) {
+        return cb(new Error("cli cp: Error ! missing source file operand"));
+    }
+
+    if (!destination) {
+        return cb(new Error("cli cp: Error ! missing destination file operand"));
+    }
+
+    source = require('path').normalize(source);
+    destination = require('path').normalize(destination);
+
+    if (source[0] != '/') {
+
+        source = require('path').join(self.currentDirectory, source)
+    } else if (source[0] == '/') {
+
+        source = require('path').resolve('/', source);
+    }
+
+    if (destination[0] != '/') {
+
+        destination = require('path').join(self.currentDirectory, destination)
+    } else if (destination[0] == '/') {
+
+        destination = require('path').resolve('/', destination);
+    }
+
+    self.union.cp(source, destination, cb);
 
 
 };
@@ -239,7 +299,7 @@ Cli.prototype.ls = function (path, cb) {
 Cli.prototype.providerFriendly = function (argv) {
 
     // Using provider as backend file system on mounted protocol 
-    // supporting cd ls cat put rmdir mkdir  commands
+    // supporting cd ls cp  commands
     var self = this,
         provider;
     argv['provider'] = argv['provider'] || 'aws';
@@ -268,6 +328,16 @@ Cli.prototype.providerFriendly = function (argv) {
 
 
     self.serverbackend = serverbackend;
+
+    if (!self.union) {
+
+        self.union = new Union(new Fio());
+    }
+
+    // if  backend not mounted fusing the backend with other mounts
+    self.union.fuse[provider] = serverbackend;
+
+
 
 
 };
@@ -333,11 +403,17 @@ function configureSsh(Config, file) {
 
 };
 
+function configureLocal(Config, file) {
+
+    var local_options = {};
+    return local_options;
+
+};
+
 if (require.main.filename === __filename) {
     // this module is the main entry point for this nodejs process
     // compatibility for commands like node cli standalone --provider=ftp
     new Cli();
 }
-
 
 module.exports = Cli;
