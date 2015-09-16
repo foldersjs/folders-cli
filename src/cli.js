@@ -30,10 +30,13 @@ var Fio = require('folders');
 var FolderFs = require('folders/src/fs');
 var Ftp = require('folders-ftp');
 var Union = Fio.union();
+var mapper = {};
+
 
 var Cli = function (argv) {
     var self = this;
     self.currentDirectory = '/';
+    self.union = new Union(new Fio());
     argv = argv || cli(process.argv.slice(2));
     var module = argv['_'][0];
 
@@ -81,7 +84,6 @@ Cli.prototype.serverFriendly = function (argv) {
 
         var server = new Server(argv, self.serverbackend);
 
-
     }
 
 
@@ -100,9 +102,6 @@ Cli.prototype.serverFriendly = function (argv) {
 			var backend = new Local();
 			var server = new Server(argv,backend);
 		*/
-
-
-
 };
 
 Cli.prototype.httpFriendly = function (argv) {
@@ -153,12 +152,8 @@ Cli.prototype.cd = function (path) {
 
     if (path == '/' || path == '~') {
 
-        // change to root directory
         self.currentDirectory = '/';
     } else if (path[0] != '/') {
-
-        // path is relative to current directory
-        // append this path to current directory and normalize it 
         self.currentDirectory = require('path').join(self.currentDirectory, path);
 
     } else if (path[0] == '/') {
@@ -179,63 +174,59 @@ Cli.prototype.ls = function (path, cb) {
 
     lsPath = path;
 
+
     //FIXME: not using backend.stat to check target
 
     if (path[0] == '/' || path == '~') {
-
         lsPath = require('path').resolve('/', path);
-
     } else if (path[0] != '/') {
-
-        // path is relative to current directory
-        // append this path to current directory and normalize it 
         lsPath = require('path').join(self.currentDirectory, path);
 
     }
 
+
+    lsPath = mountPoint(lsPath);
     self.union.ls(lsPath, function (err, result) {
 
         if (err) {
             return cb(err);
-
         }
 
         var list = result.map(function (x) {
 
-            return x.name;
+            return mapper[x.name] || x.name;
         });
+
         return cb(null, list);
 
     });
 
+
 };
 
 
-Cli.prototype.mount = function (provider) {
+Cli.prototype.mount = function (provider, mountpoint) {
+
 
     var self = this;
-    if (!self.union) {
-        self.union = new Union(new Fio());
-    }
-
     if (provider === 'aws') {
-
-
         self.union.setup({
             "view": "list"
         }, [{
             "aws": Fio.provider('aws', configureAws())
         }]);
+        !mapper[provider] && (mapper[provider] = mountpoint || provider);
+
     }
 
     if (provider === 'local') {
-
-
         self.union.setup({
             "view": "list"
         }, [{
             "local": Fio.provider('local', configureLocal())
         }]);
+        !mapper[provider] && (mapper[provider] = mountpoint || provider);
+
     }
 
 
@@ -245,25 +236,23 @@ Cli.prototype.umount = function (provider) {
 
     var self = this;
 
-	if (!self.union){
-		 return;
-	}
     if (!provider) {
 
         return;
     }
 
     self.union.umount(provider);
+    if (mapper[provider]){
+        delete mapper[provider];
+	}
+
+
 };
 
 Cli.prototype.cp = function (source, destination, cb) {
 
     var self = this;
-	
-	if (!self.union){
-		 return cb(new Error("Error ! file system not mounted"));
-	}
-	
+
     if (!source) {
         return cb(new Error("cli cp: Error ! missing source file operand"));
     }
@@ -292,6 +281,8 @@ Cli.prototype.cp = function (source, destination, cb) {
     }
 
     self.union.cp(source, destination, cb);
+    source = mountPoint(source);
+    destination = mountPoint(destination);
 
 
 };
@@ -329,16 +320,9 @@ Cli.prototype.providerFriendly = function (argv) {
 
     self.serverbackend = serverbackend;
 
-    if (!self.union) {
-
-        self.union = new Union(new Fio());
-    }
-
     // if  backend not mounted fusing the backend with other mounts
-    self.union.fuse[provider] = serverbackend;
-
-
-
+    if (!self.union.fuse[provider])
+        self.union.fuse[provider] = serverbackend;
 
 };
 
@@ -414,6 +398,18 @@ if (require.main.filename === __filename) {
     // this module is the main entry point for this nodejs process
     // compatibility for commands like node cli standalone --provider=ftp
     new Cli();
+}
+
+// FIXME: regex will be the cleaner way 
+function mountPoint(lsPath) {
+
+    if (mapper['aws'] && lsPath.substr(0, mapper['aws'].length + 1) === '/' + mapper['aws']) {
+        lsPath = "/aws" + lsPath.substr(mapper['aws'].length + 1, lsPath.length)
+    } else if (mapper['local'] && lsPath.substr(0, mapper['local'].length + 1) === '/' + mapper['local']) {
+        lsPath = "/local" + lsPath.substr(mapper['local'].length + 1, lsPath.length)
+    }
+    return lsPath;
+
 }
 
 module.exports = Cli;

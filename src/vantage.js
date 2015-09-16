@@ -8,13 +8,15 @@ var Cli = require('./cli');
 var server = require("vorpal")();
 
 
+// interfacing folders.io cli
+server.cli = new Cli();
 
 server
     .command("fs")
     .description("list currently available file systems ")
     .action(function (args, cb) {
         this.log(['local', 'stub', 'memory', 'aws', 'hdfs', 'pkgcloud'].join('\n'));
-        cb();
+        return cb();
     });
 
 server
@@ -22,78 +24,33 @@ server
     .description("list currently available embedded servers")
     .action(function (args, cb) {
         this.log(['ftp', 'ssh', 'http'].join('\n'));
-        cb();
+        return cb();
     });
 
 server
     .command("cd [DIR]")
     .description("Change the working directory.Change the current directory to DIR.")
     .action(function (args, cb) {
-        if (!server.cli) {
-            this.log("Error ! Mount the file system first");
-
-        } else {
-
-            server.cli.cd(args.DIR);
-        }
-        cb();
-
+        server.cli.cd(args.DIR);
+        return cb();
     });
 
 server
     .command("pwd")
     .description("Display present working directory.")
     .action(function (args, cb) {
-        if (!server.cli) {
-            this.log("Error ! Mount the file system first");
-
-        } else {
-
-            this.log(server.cli.currentDirectory);
-        }
-        cb();
-
-    });
-
-server
-    .command("ls [path]")
-    .description("List information about the FILEs (the current directory by default).")
-    .action(function (args, cb) {
-
-        if (!server.cli) {
-
-            cb();
-
-        } else {
-
-            server.cli.ls(args.path, function (err, data) {
-
-                for (var i = 0; i < data.length; ++i) {
-
-                    server.log(data[i]);
-                }
-
-                cb();
-            });
-        }
-
+        this.log(server.cli.currentDirectory);
+        return cb();
     });
 
 
 server
-    .command("mount")
+    .command("mount [mountpoint]")
     .option('-p, --provider <provider>', 'Mounts backend file system')
     .description("Adds a backend in union mode")
     .action(function (args, cb) {
-
-        if (!server.cli) {
-
-            server.cli = new Cli();
-        }
-
-        server.cli.mount(args.options.provider);
-
-        cb();
+        server.cli.mount(args.options.provider, args.mountpoint);
+        return cb();
     });
 
 server
@@ -101,14 +58,8 @@ server
     .option('-p, --provider <provider>', ' Un mounts backend file system')
     .description("Un mounts a backend in union mode")
     .action(function (args, cb) {
-        if (!server.cli) {
-
-            this.log("Error ! Nothing is mounted");
-            return;
-        }
-
         server.cli.umount(args.options.provider);
-        cb();
+        return cb();
     });
 
 server
@@ -116,30 +67,20 @@ server
     .description("Dumps json configuration file")
     .action(function (args, cb) {
         this.log("FIXME");
-        cb();
+        return cb();
     });
 
 server
     .command("cp <source> <destination>")
     .description("Dumps json configuration file")
     .action(function (args, cb) {
-        if (!server.cli) {
-
-            server.log("Error! No file system is mounted");
-
-            return cb();
-
-
-        }
-
         server.cli.cp(args.source, args.destination, function (err) {
-
             if (err) {
                 server.log(err);
                 return cb();
 
             }
-            cb();
+            return cb();
 
         });
 
@@ -188,7 +129,64 @@ server
     });
 
 server
+    .command("ls [path]", "List files and folders.")
+    .autocompletion(function (text, iteration, cb) {
+
+        text = text.slice(1, text.length);
+
+        if (iteration > 1) {
+            // output all results which match with this text 
+            server.cli.ls(server.cli.currentDirectory, function (err, data) {
+                var mat = matc(text, data);
+                if (mat.length > 0) {
+                    cb(void 0, mat);
+                } else {
+                    cb(void 0, void 0);
+                }
+
+            });
+
+        }
+
+    })
+    .action(function (args, cb) {
+
+        server.cli.ls(args.path, function (err, data) {
+
+            for (var i = 0; i < data.length; ++i) {
+
+                server.log(data[i]);
+            }
+
+            cb();
+        });
+
+    });
+
+server
     .delimiter('folders~$')
     .show();
 
+
 server.parse(process.argv);
+
+var matc = function (text, data) {
+    var out = [];
+    var len = data.length,
+        i = 0;
+    text = text.trim();
+    if (text == "") {
+
+        return data;
+    }
+    for (; i < len; i++) {
+        var regex = new RegExp("^" + text);
+        if (data[i].match(regex)) {
+            out.push(data[i]);
+
+        }
+
+    }
+
+    return out;
+}
