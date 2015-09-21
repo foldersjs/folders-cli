@@ -30,6 +30,13 @@ server
 server
     .command("cd [DIR]")
     .description("Change the working directory.Change the current directory to DIR.")
+    .autocompletion(function (text, iteration, cb) {
+
+
+        autoComplete(text, iteration, "cd", cb);
+
+
+    })
     .action(function (args, cb) {
         server.cli.cd(args.DIR);
         return cb();
@@ -66,25 +73,28 @@ server
     .command("dump")
     .description("Dumps json configuration file")
     .action(function (args, cb) {
-        this.log("FIXME");
+        var config = server.cli.dump();
+        server.log(config);
         return cb();
     });
+
 
 server
     .command("cp <source> <destination>")
     .description("Dumps json configuration file")
-    .action(function (args, cb) {
-        server.cli.cp(args.source, args.destination, function (err) {
-            if (err) {
-                server.log(err);
-                return cb();
+	.action(function (args, cb) {
 
-            }
+    server.cli.cp(args.source, args.destination, function (err) {
+        if (err) {
+            server.log(err);
             return cb();
 
-        });
+        }
+        return cb();
 
     });
+
+});
 
 
 server
@@ -131,22 +141,7 @@ server
 server
     .command("ls [path]", "List files and folders.")
     .autocompletion(function (text, iteration, cb) {
-
-        text = text.slice(1, text.length);
-
-        if (iteration > 1) {
-            // output all results which match with this text 
-            server.cli.ls(server.cli.currentDirectory, function (err, data) {
-                var mat = matc(text, data);
-                if (mat.length > 0) {
-                    cb(void 0, mat);
-                } else {
-                    cb(void 0, void 0);
-                }
-
-            });
-
-        }
+        autoComplete(text, iteration, "ls", cb);
 
     })
     .action(function (args, cb) {
@@ -162,6 +157,7 @@ server
         });
 
     });
+
 
 server
     .delimiter('folders~$')
@@ -189,4 +185,106 @@ var matc = function (text, data) {
     }
 
     return out;
-}
+};
+
+
+var longestComonSubstring = function (data) {
+
+    if (data.length < 1) {
+
+        return "";
+    }
+    data.sort();
+    var s = data[0],
+        e = data[data.length - 1];
+    var ls = s.length;
+    var i = 0;
+    while (s[i] == e[i] && i < ls) {
+        i++;
+    }
+    return s.substr(0, i);
+
+
+};
+
+var pathResolver = function (path) {
+
+
+    path = require('path').normalize(path.trim());
+    path = path || server.cli.currentDirectory;
+    
+    var basename;
+    var dirname;
+    if (path[path.lastIndexOf('/')] != path[path.length - 1]) {
+        basename = require('path').basename(path);
+        dirname = require('path').dirname(path);
+    } else {
+
+        basename = '';
+        dirname = path;
+    }
+
+    return [dirname, basename];
+
+};
+
+var autoComplete = function (text, iteration, cmd, cb) {
+
+
+    var arr = pathResolver(text);
+    var dir = arr[0];
+    var tex = arr[1];
+
+    if (iteration > 1) {
+        // output all results which match with this text 
+
+        server.cli.ls(dir, function (err, data) {
+            var mat = matc(tex, data);
+            if (mat.length > 0) {
+                cb(void 0, mat);
+            } else {
+                cb(void 0, void 0);
+            }
+
+        });
+
+    } else {
+
+        server.cli.ls(dir, function (err, data) {
+            var mat = matc(tex, data);
+
+            if (text.trim() == "") {
+
+                if (mat.length != 1) {
+                    //cb(void 0, void 0);
+                    cb(void 0, cmd + " " + longestComonSubstring(mat));
+
+                } else {
+
+                    cb(void 0, cmd + " " + mat[0] + '/');
+                }
+
+            } else {
+
+                if (mat.length != 1) {
+                    if (mat.length == 0) {
+
+                        return cb(void 0, void 0);
+                    }
+                    var showPath = require('path').join(dir, longestComonSubstring(mat));
+                    cb(void 0, cmd + " " + showPath);
+
+
+                } else {
+
+                    var showPath = require('path').join(dir, longestComonSubstring(mat));
+                    cb(void 0, cmd + " " + showPath + '/');
+
+                }
+
+            }
+
+        });
+    }
+
+};

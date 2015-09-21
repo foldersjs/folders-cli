@@ -160,6 +160,11 @@ Cli.prototype.cd = function (path) {
         self.currentDirectory = require('path').resolve('/', require('path').normalize(path));
 
     }
+	
+	if (self.currentDirectory[self.currentDirectory.length -1] != '/'){
+	
+		self.currentDirectory = self.currentDirectory + '/';
+	}
 
 };
 
@@ -326,6 +331,28 @@ Cli.prototype.providerFriendly = function (argv) {
 
 };
 
+Cli.prototype.dump = function(){
+	var self = this;
+	var mounts = self.union.fuse ;
+	var config = {} ;
+	for (name in mounts){
+	
+		if (mounts.hasOwnProperty(name)){
+			
+			try {
+    			config[name] = require(require('path').join('../',name+'.json'));
+			}
+			catch (e) {
+    			// Error loading in config file for this mounted file system 
+				config[name] = "No config file present" ;
+			}
+			
+		}
+	}
+	
+	return config ;
+	
+};
 function configureFtp(Config, file) {
 
 

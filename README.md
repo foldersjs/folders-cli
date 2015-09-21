@@ -162,3 +162,86 @@ Additionally one  can pass shareid also.
 ```
 $ node cli standalone --provider = stub:testshareid
 ```
+
+Interactive Cli
+============
+
+There is a interactive CLi comes with this package which exposes
+wider set of commands which can be directly used to manipulate and access
+folders.io functionality
+
+#####To start folders.io in interactive mode ,type 
+
+```
+$ node vantage.js
+```
+
+After executing above command you will see a **folders-$** delimiter on screen.
+
+
+#####To view all avaiable commands type
+
+```
+folders-$ help
+```
+
+#####To list currently available file systems ,type 
+
+```
+folders-$ fs
+```
+
+#####To mount a avilable file system at mountpoint ,type
+
+```
+folders-$ mount --provider=provider mountpoint
+
+// Example
+folders-$ mount --provider=aws awsdir
+```
+
+file systems are mounted at the root of directory tree 
+
+#####To un mount a mounted file system ,type
+
+```
+folders-$ umount --provider=aws
+```
+
+#####To change working directory ,type 
+
+```
+folders~$ cd
+
+// Example
+folders-$ cd ../
+folders-$ cd /aws/S3/us-west-2/testbucket/folder1
+folders-$ cd folder2
+```
+#####To view the current working directory ,type
+
+```
+folders-$ pwd
+
+// Output 
+/aws/S3/us-west-2/testbucket/folder1/folder2
+```
+#####To list directory,type 
+
+```
+folders-$ ls
+```
+
+#####To list currently mounted file systems 
+
+```
+folders-$ cd /
+folders-$ ls
+```
+
+#####To copy file from one location to another location ,type 
+
+```
+folders-$ cp source destination
+```
+paths can be absolute or relative 
