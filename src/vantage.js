@@ -52,7 +52,7 @@ server
 
 
 server
-    .command("mount [mountpoint]")
+    .command("mount <mountpoint>")
     .option('-p, --provider <provider>', 'Mounts backend file system')
     .description("Adds a backend in union mode")
     .action(function (args, cb) {
@@ -61,11 +61,10 @@ server
     });
 
 server
-    .command("umount")
-    .option('-p, --provider <provider>', ' Un mounts backend file system')
-    .description("Un mounts a backend in union mode")
+    .command("umount <mountPoint>")
+    .description("Un mounts a mount point in union mode")
     .action(function (args, cb) {
-        server.cli.umount(args.options.provider);
+        server.cli.umount(args.mountPoint);
         return cb();
     });
 
@@ -78,11 +77,14 @@ server
         return cb();
     });
 
-
 server
     .command("cp <source> <destination>")
     .description("Dumps json configuration file")
-	.action(function (args, cb) {
+
+
+
+
+.action(function (args, cb) {
 
     server.cli.cp(args.source, args.destination, function (err) {
         if (err) {
@@ -93,6 +95,8 @@ server
         return cb();
 
     });
+
+
 
 });
 
@@ -142,6 +146,9 @@ server
     .command("ls [path]", "List files and folders.")
     .autocompletion(function (text, iteration, cb) {
         autoComplete(text, iteration, "ls", cb);
+
+
+
 
     })
     .action(function (args, cb) {
@@ -212,7 +219,9 @@ var pathResolver = function (path) {
 
     path = require('path').normalize(path.trim());
     path = path || server.cli.currentDirectory;
-    
+    //path = path || "" ;
+
+
     var basename;
     var dirname;
     if (path[path.lastIndexOf('/')] != path[path.length - 1]) {
@@ -282,9 +291,14 @@ var autoComplete = function (text, iteration, cmd, cb) {
 
                 }
 
+
             }
 
+
+
         });
+
+
     }
 
 };

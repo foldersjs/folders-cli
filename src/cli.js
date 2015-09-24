@@ -30,7 +30,7 @@ var Fio = require('folders');
 var FolderFs = require('folders/src/fs');
 var Ftp = require('folders-ftp');
 var Union = Fio.union();
-var mapper = {};
+
 
 
 var Cli = function (argv) {
@@ -166,6 +166,10 @@ Cli.prototype.cd = function (path) {
 		self.currentDirectory = self.currentDirectory + '/';
 	}
 
+
+
+
+
 };
 
 Cli.prototype.ls = function (path, cb) {
@@ -190,7 +194,6 @@ Cli.prototype.ls = function (path, cb) {
     }
 
 
-    lsPath = mountPoint(lsPath);
     self.union.ls(lsPath, function (err, result) {
 
         if (err) {
@@ -199,7 +202,7 @@ Cli.prototype.ls = function (path, cb) {
 
         var list = result.map(function (x) {
 
-            return mapper[x.name] || x.name;
+            return x.name;
         });
 
         return cb(null, list);
@@ -210,47 +213,43 @@ Cli.prototype.ls = function (path, cb) {
 };
 
 
-Cli.prototype.mount = function (provider, mountpoint) {
+Cli.prototype.mount = function (provider, mountPoint) {
 
 
     var self = this;
+	var mount = {} ;
     if (provider === 'aws') {
+		mount[mountPoint] = Fio.provider('aws', configureAws());
         self.union.setup({
             "view": "list"
-        }, [{
-            "aws": Fio.provider('aws', configureAws())
-        }]);
-        !mapper[provider] && (mapper[provider] = mountpoint || provider);
+        }, [mount]);
+        
 
     }
 
     if (provider === 'local') {
+		mount[mountPoint] = Fio.provider('local', configureLocal());
         self.union.setup({
             "view": "list"
-        }, [{
-            "local": Fio.provider('local', configureLocal())
-        }]);
-        !mapper[provider] && (mapper[provider] = mountpoint || provider);
+        }, [mount]);
+       
 
     }
 
 
 };
 
-Cli.prototype.umount = function (provider) {
+Cli.prototype.umount = function (mountPoint) {
 
     var self = this;
 
-    if (!provider) {
+    if (!mountPoint) {
 
         return;
     }
 
-    self.union.umount(provider);
-    if (mapper[provider]){
-        delete mapper[provider];
-	}
-
+    self.union.umount(mountPoint);
+    
 
 };
 
@@ -286,8 +285,7 @@ Cli.prototype.cp = function (source, destination, cb) {
     }
 
     self.union.cp(source, destination, cb);
-    source = mountPoint(source);
-    destination = mountPoint(destination);
+   
 
 
 };
@@ -353,6 +351,7 @@ Cli.prototype.dump = function(){
 	return config ;
 	
 };
+
 function configureFtp(Config, file) {
 
 
@@ -427,16 +426,6 @@ if (require.main.filename === __filename) {
     new Cli();
 }
 
-// FIXME: regex will be the cleaner way 
-function mountPoint(lsPath) {
 
-    if (mapper['aws'] && lsPath.substr(0, mapper['aws'].length + 1) === '/' + mapper['aws']) {
-        lsPath = "/aws" + lsPath.substr(mapper['aws'].length + 1, lsPath.length)
-    } else if (mapper['local'] && lsPath.substr(0, mapper['local'].length + 1) === '/' + mapper['local']) {
-        lsPath = "/local" + lsPath.substr(mapper['local'].length + 1, lsPath.length)
-    }
-    return lsPath;
-
-}
 
 module.exports = Cli;
