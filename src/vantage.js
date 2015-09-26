@@ -143,6 +143,17 @@ server
     });
 
 server
+    .command("netstat [provider]")
+    .description("Give approximate data usage for various providers")
+    .action(function (args, cb) {
+        var data = server.cli.netstat(args.provider);
+        server.log((new Array(20)).join("-"));
+        server.log(data);
+        server.log((new Array(20)).join("-"));
+        cb();
+    });
+
+server
     .command("ls [path]", "List files and folders.")
     .autocompletion(function (text, iteration, cb) {
         autoComplete(text, iteration, "ls", cb);
@@ -274,6 +285,7 @@ var autoComplete = function (text, iteration, cmd, cb) {
                 }
 
             } else {
+
 
                 if (mat.length != 1) {
                     if (mat.length == 0) {

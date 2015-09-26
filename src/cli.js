@@ -28,8 +28,9 @@ var Server = require('folders-http/src/standaloneServer');
 var Fio = require('folders');
 //Used to wrap a provider in Nodejs-compatible mode!
 var FolderFs = require('folders/src/fs');
-var Ftp = require('folders-ftp');
+//var Ftp = require('folders-ftp');
 var Union = Fio.union();
+
 
 
 
@@ -160,15 +161,11 @@ Cli.prototype.cd = function (path) {
         self.currentDirectory = require('path').resolve('/', require('path').normalize(path));
 
     }
-	
-	if (self.currentDirectory[self.currentDirectory.length -1] != '/'){
-	
-		self.currentDirectory = self.currentDirectory + '/';
-	}
 
+    if (self.currentDirectory[self.currentDirectory.length - 1] != '/') {
 
-
-
+        self.currentDirectory = self.currentDirectory + '/';
+    }
 
 };
 
@@ -217,22 +214,22 @@ Cli.prototype.mount = function (provider, mountPoint) {
 
 
     var self = this;
-	var mount = {} ;
+    var mount = {};
     if (provider === 'aws') {
-		mount[mountPoint] = Fio.provider('aws', configureAws());
+        mount[mountPoint] = Fio.provider('aws', configureAws());
         self.union.setup({
             "view": "list"
         }, [mount]);
-        
+
 
     }
 
     if (provider === 'local') {
-		mount[mountPoint] = Fio.provider('local', configureLocal());
+        mount[mountPoint] = Fio.provider('local', configureLocal());
         self.union.setup({
             "view": "list"
         }, [mount]);
-       
+
 
     }
 
@@ -249,7 +246,7 @@ Cli.prototype.umount = function (mountPoint) {
     }
 
     self.union.umount(mountPoint);
-    
+
 
 };
 
@@ -285,8 +282,6 @@ Cli.prototype.cp = function (source, destination, cb) {
     }
 
     self.union.cp(source, destination, cb);
-   
-
 
 };
 
@@ -320,6 +315,11 @@ Cli.prototype.providerFriendly = function (argv) {
         serverbackend = Fio.provider(provider, aws_options).create('prefix');
     }
 
+    if (provider === 'local') {
+
+        var local_options = configureLocal(null, argv['local-config-file']);
+        serverbackend = Fio.provider(provider, local_options).create('prefix');
+    }
 
     self.serverbackend = serverbackend;
 
@@ -329,27 +329,37 @@ Cli.prototype.providerFriendly = function (argv) {
 
 };
 
-Cli.prototype.dump = function(){
-	var self = this;
-	var mounts = self.union.fuse ;
-	var config = {} ;
-	for (name in mounts){
-	
-		if (mounts.hasOwnProperty(name)){
-			
-			try {
-    			config[name] = require(require('path').join('../',name+'.json'));
-			}
-			catch (e) {
-    			// Error loading in config file for this mounted file system 
-				config[name] = "No config file present" ;
-			}
-			
-		}
-	}
-	
-	return config ;
-	
+Cli.prototype.dump = function () {
+    var self = this;
+    var mounts = self.union.fuse;
+    var config = {};
+    for (name in mounts) {
+
+        if (mounts.hasOwnProperty(name)) {
+
+            config[name] = mounts[name].dump();
+
+        }
+    }
+
+    return config;
+
+};
+
+Cli.prototype.netstat = function (provider) {
+    var dataStats = {};
+    var providers = Fio.providers;
+
+    for (name in providers) {
+
+        if (providers[name].dataVolume) {
+
+            dataStats[name] = providers[name].dataVolume();
+
+        }
+    }
+
+    return dataStats;
 };
 
 function configureFtp(Config, file) {
@@ -425,7 +435,5 @@ if (require.main.filename === __filename) {
     // compatibility for commands like node cli standalone --provider=ftp
     new Cli();
 }
-
-
 
 module.exports = Cli;
