@@ -31,6 +31,12 @@ var FolderFs = require('folders/src/fs');
 //var Ftp = require('folders-ftp');
 var Union = Fio.union();
 
+var configMapper = {
+    'local': configureLocal,
+    'aws': configureAws,
+    'ssh': configureSsh,
+    'ftp': configureFtp
+};
 
 
 
@@ -38,9 +44,12 @@ var Cli = function (argv) {
     var self = this;
     self.currentDirectory = '/';
     self.union = new Union(new Fio());
+};
+
+Cli.prototype.startModule = function (argv, cb) {
+    var self = this;
     argv = argv || cli(process.argv.slice(2));
     var module = argv['_'][0];
-
     switch (true) {
 
 
@@ -51,7 +60,7 @@ var Cli = function (argv) {
     case (module == 'standalone'):
     case (module == 'server'):
 
-        self.standaloneFriendly(argv);
+        self.standaloneFriendly(argv, cb);
         break;
 
     case (module == 'folders-http'):
@@ -61,16 +70,16 @@ var Cli = function (argv) {
 
 };
 
-
-Cli.prototype.standaloneFriendly = function (argv) {
+Cli.prototype.standaloneFriendly = function (argv, cb) {
 
     var self = this;
 
-    self.serverFriendly(argv);
+    self.serverFriendly(argv, cb);
 
 };
 
-Cli.prototype.serverFriendly = function (argv) {
+
+Cli.prototype.serverFriendly = function (argv, cb) {
     var self = this;
     argv = argv || {};
     argv['client'] = argv['client'] || argv['_'][1] || false;
@@ -81,9 +90,14 @@ Cli.prototype.serverFriendly = function (argv) {
 
     if (argv['mode'] == 'DEBUG') {
 
-        self.providerFriendly(argv);
 
-        var server = new Server(argv, self.serverbackend);
+
+        self.providerFriendly(argv, function (err, serverbackend) {
+
+            var server = new Server(argv, serverbackend);
+            //cb();
+
+        });
 
     }
 
@@ -104,6 +118,7 @@ Cli.prototype.serverFriendly = function (argv) {
 			var server = new Server(argv,backend);
 		*/
 };
+
 
 Cli.prototype.httpFriendly = function (argv) {
 
@@ -209,30 +224,25 @@ Cli.prototype.ls = function (path, cb) {
 
 };
 
-
-Cli.prototype.mount = function (provider, mountPoint) {
+Cli.prototype.mount = function (provider, mountPoint, cb) {
 
 
     var self = this;
     var mount = {};
-    if (provider === 'aws') {
-        mount[mountPoint] = Fio.provider('aws', configureAws());
+
+    configMapper[provider](null, null, function (err, result) {
+
+        if (err) {
+
+            return cb(err);
+        }
+
+        mount[mountPoint] = Fio.provider(provider, result);
         self.union.setup({
             "view": "list"
         }, [mount]);
-
-
-    }
-
-    if (provider === 'local') {
-        mount[mountPoint] = Fio.provider('local', configureLocal());
-        self.union.setup({
-            "view": "list"
-        }, [mount]);
-
-
-    }
-
+        return cb();
+    });
 
 };
 
@@ -285,7 +295,8 @@ Cli.prototype.cp = function (source, destination, cb) {
 
 };
 
-Cli.prototype.providerFriendly = function (argv) {
+
+Cli.prototype.providerFriendly = function (argv, cb) {
 
     // Using provider as backend file system on mounted protocol 
     // supporting cd ls cp  commands
@@ -299,33 +310,19 @@ Cli.prototype.providerFriendly = function (argv) {
 
     var serverbackend;
 
-    if (provider === 'ftp') {
-        var ftp_options = configureFtp(null, argv['ftp-config-file']);
-        serverbackend = Fio.provider(provider, ftp_options).create('prefix');
-    }
+    configMapper[provider](null, argv[provider + "-config-file"], function (err, result) {
 
-    if (provider === 'ssh') {
-        var ssh_options = configureSsh(null, argv['ssh-config-file']);
-        serverbackend = Fio.provider(provider, ssh_options).create('prefix');
-    }
+        if (err) {
 
-    if (provider === 'aws') {
+            return cb(err);
+        }
+        serverbackend = Fio.provider(provider, result).create('prefix');
+		// if  backend not mounted fusing the backend with other mounts
+        if (!self.union.fuse[provider])
+            self.union.fuse[provider] = serverbackend;
+        cb(null, serverbackend);
 
-        var aws_options = configureAws(null, argv['aws-config-file']);
-        serverbackend = Fio.provider(provider, aws_options).create('prefix');
-    }
-
-    if (provider === 'local') {
-
-        var local_options = configureLocal(null, argv['local-config-file']);
-        serverbackend = Fio.provider(provider, local_options).create('prefix');
-    }
-
-    self.serverbackend = serverbackend;
-
-    // if  backend not mounted fusing the backend with other mounts
-    if (!self.union.fuse[provider])
-        self.union.fuse[provider] = serverbackend;
+    });
 
 };
 
@@ -362,78 +359,81 @@ Cli.prototype.netstat = function (provider) {
     return dataStats;
 };
 
-function configureFtp(Config, file) {
 
-
-    var ftp_options = {};
+function configureFtp(config, file, cb) {
     file = file || 'ftp.json';
-    Config = Config || require("../" + file);
+    config = config || require("../" + file);
     var backend;
 
-    if (Config.backend.provider === 'aws') {
-        var aws_options = configureAws(Config.backend.options);
-        backend = new FolderFs(Fio.provider('aws', aws_options).create('aws'))
+    configMapper[config.backend.provider](config.backend.options, null, function (err, result) {
+        if (err) {
 
-    }
+            return cb(err);
+        }
 
-    // code for other backend synthetic file systems may come here 
+        backend = Fio.provider(provider, result).create(provider);
+        config.backend = backend;
+        return cb(null, config);
 
-    ftp_options.connectionString = Config.connectionString;
-    ftp_options.enableEmbeddedServer = Config.enableEmbeddedServer;
-    ftp_options.backend = backend;
-    return ftp_options;
-
+    });
 };
 
-function configureAws(Config, file) {
+function configureAws(config, file, cb) {
     file = file || 'aws.json';
-    Config = Config || require("../" + file);
-    var aws_options = {};
-    aws_options.accessKeyId = Config.accessKeyId;
-    aws_options.secretAccessKey = Config.secretAccessKey;
-    aws_options.service = Config.service;
-    aws_options.region = Config.region;
-    aws_options.bucket = Config.bucket;
-    return aws_options;
+    config = config || require("../" + file);
+    require('folders-aws').isConfigValid(config, function (err, awsConfig) {
+
+        if (err) {
+
+            return cb(err);
+        } else {
+            return cb(null, awsConfig);
+        }
+    })
 
 
 };
 
 
-function configureSsh(Config, file) {
+function configureSsh(config, file, cb) {
 
-
-    var ssh_options = {};
     file = file || 'ssh.json';
-    Config = Config || require("../" + file);
+    config = config || require("../" + file);
 
     var backend;
+    configMapper[config.backend.provider](config.backend.options, null, function (err, result) {
 
-    if (Config.backend.provider === 'aws') {
-        var aws_options = configureAws(Config.backend.options);
-        backend = Fio.provider('aws', aws_options).create('aws')
+        if (err) {
 
-    }
-    // code for other backend synthetic file systems may come here 
+            return cb(err);
+        }
 
-    ssh_options.connectionString = Config.connectionString;
-    ssh_options.enableEmbeddedServer = Config.enableEmbeddedServer;
-    ssh_options.backend = backend;
-    return ssh_options;
+        backend = Fio.provider(provider, result).create(provider);
+        config.backend = backend;
+        return cb(null, config);
+
+    });
 
 };
 
-function configureLocal(Config, file) {
+function configureLocal(config, file, cb) {
 
     var local_options = {};
-    return local_options;
+    return cb(null, local_options);
 
 };
 
 if (require.main.filename === __filename) {
     // this module is the main entry point for this nodejs process
     // compatibility for commands like node cli standalone --provider=ftp
-    new Cli();
+    var service = new Cli();
+
+    service.startModule(cli(process.argv.slice(2)), function (err, data) {
+
+        // place holder ;
+        console.log("service started");
+    })
+
 }
 
 module.exports = Cli;

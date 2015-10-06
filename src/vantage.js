@@ -32,10 +32,7 @@ server
     .description("Change the working directory.Change the current directory to DIR.")
     .autocompletion(function (text, iteration, cb) {
 
-
         autoComplete(text, iteration, "cd", cb);
-
-
     })
     .action(function (args, cb) {
         server.cli.cd(args.DIR);
@@ -56,8 +53,17 @@ server
     .option('-p, --provider <provider>', 'Mounts backend file system')
     .description("Adds a backend in union mode")
     .action(function (args, cb) {
-        server.cli.mount(args.options.provider, args.mountpoint);
-        return cb();
+        server.cli.mount(args.options.provider, args.mountpoint,function(err){
+		
+				if (err){
+				
+					server.log(err);
+					
+				}
+				
+				return cb();
+		});
+        
     });
 
 server
@@ -80,23 +86,16 @@ server
 server
     .command("cp <source> <destination>")
     .description("Dumps json configuration file")
+	.action(function (args, cb) {
 
-
-
-
-.action(function (args, cb) {
-
-    server.cli.cp(args.source, args.destination, function (err) {
-        if (err) {
-            server.log(err);
-            return cb();
-
-        }
-        return cb();
+		server.cli.cp(args.source, args.destination, function (err) {
+			if (err) {
+				server.log(err);
+				return cb();
+			}
+			return cb();
 
     });
-
-
 
 });
 
@@ -116,8 +115,10 @@ server
     .action(function (args, cb) {
         args.options.client = args.client;
         args.options._ = ['standalone'];
-        server.cli = new Cli(args.options);
-        cb();
+        server.cli = new Cli();
+
+		server.cli.startModule(args.options,cb);
+       
     });
 
 
@@ -157,9 +158,6 @@ server
     .command("ls [path]", "List files and folders.")
     .autocompletion(function (text, iteration, cb) {
         autoComplete(text, iteration, "ls", cb);
-
-
-
 
     })
     .action(function (args, cb) {
@@ -231,8 +229,6 @@ var pathResolver = function (path) {
     path = require('path').normalize(path.trim());
     path = path || server.cli.currentDirectory;
     //path = path || "" ;
-
-
     var basename;
     var dirname;
     if (path[path.lastIndexOf('/')] != path[path.length - 1]) {
@@ -302,15 +298,7 @@ var autoComplete = function (text, iteration, cmd, cb) {
                     cb(void 0, cmd + " " + showPath + '/');
 
                 }
-
-
             }
-
-
-
         });
-
-
     }
-
 };
