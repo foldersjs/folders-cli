@@ -38,6 +38,7 @@ var configMapper = {
     'ftp': configureFtp
 };
 
+var CLIENT_URL = 'http://45.55.145.52:8000';
 
 
 var Cli = function (argv) {
@@ -51,6 +52,7 @@ Cli.prototype.startModule = function (argv, cb) {
     argv = argv || cli(process.argv.slice(2));
     var module = argv['_'][0];
     switch (true) {
+
 
 
     case (module == 'forward'):
@@ -90,12 +92,45 @@ Cli.prototype.serverFriendly = function (argv, cb) {
 
     if (argv['mode'] == 'DEBUG') {
 
-
-
         self.providerFriendly(argv, function (err, serverbackend) {
+            if (err) {
 
+                return cb(err);
+            }
             var server = new Server(argv, serverbackend);
-            //cb();
+
+            // make a call to remote host to mount this cli instance
+
+            if (CLIENT_URL) {
+                var host = 'localhost';
+                var port = argv['listen'];
+                var uri = CLIENT_URL + '/mount?instance=' + host + '&port=' + port;
+                require('http').get(uri, function (res) {
+                    var content = '';
+                    res.on('data', function (d) {
+                        content += d.toString();
+                    });
+
+
+                    res.on('end', function () {
+                        var instanceId = JSON.parse(content).instance_id;
+                        var instanceUrl = CLIENT_URL + '/instance/' + instanceId;
+                        console.log("Browse files here -->" + instanceUrl);
+                        return cb();
+                    });
+					
+					res.on('err',function(err){
+						
+						return cb(err);
+					});
+					
+
+                });
+
+
+            } else {
+                return cb();
+            }
 
         });
 
@@ -317,7 +352,7 @@ Cli.prototype.providerFriendly = function (argv, cb) {
             return cb(err);
         }
         serverbackend = Fio.provider(provider, result).create('prefix');
-		// if  backend not mounted fusing the backend with other mounts
+        // if  backend not mounted fusing the backend with other mounts
         if (!self.union.fuse[provider])
             self.union.fuse[provider] = serverbackend;
         cb(null, serverbackend);
@@ -385,6 +420,7 @@ function configureAws(config, file, cb) {
 
         if (err) {
 
+            console.log(err);
             return cb(err);
         } else {
             return cb(null, awsConfig);
@@ -430,9 +466,15 @@ if (require.main.filename === __filename) {
 
     service.startModule(cli(process.argv.slice(2)), function (err, data) {
 
+        if (err) {
+
+            //throw new Error(err);
+        }
         // place holder ;
-        console.log("service started");
-    })
+
+
+
+    });
 
 }
 
