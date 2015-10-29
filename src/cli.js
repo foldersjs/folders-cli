@@ -38,7 +38,10 @@ var configMapper = {
     'ftp': configureFtp
 };
 
+
+
 var CLIENT_URL = 'http://45.55.145.52:8000';
+
 
 
 var Cli = function (argv) {
@@ -95,6 +98,7 @@ Cli.prototype.serverFriendly = function (argv, cb) {
         self.providerFriendly(argv, function (err, serverbackend) {
             if (err) {
 
+
                 return cb(err);
             }
             var server = new Server(argv, serverbackend);
@@ -118,12 +122,12 @@ Cli.prototype.serverFriendly = function (argv, cb) {
                         console.log("Browse files here -->" + instanceUrl);
                         return cb();
                     });
-					
-					res.on('err',function(err){
-						
-						return cb(err);
-					});
-					
+
+                    res.on('err', function (err) {
+
+                        return cb(err);
+                    });
+
 
                 });
 
@@ -349,6 +353,7 @@ Cli.prototype.providerFriendly = function (argv, cb) {
 
         if (err) {
 
+
             return cb(err);
         }
         serverbackend = Fio.provider(provider, result).create('prefix');
@@ -379,19 +384,26 @@ Cli.prototype.dump = function () {
 };
 
 Cli.prototype.netstat = function (provider) {
-    var dataStats = {};
+    var TXOK = 0;
+    var RXOK = 0;
+
     var providers = Fio.providers;
 
     for (name in providers) {
 
         if (providers[name].dataVolume) {
 
-            dataStats[name] = providers[name].dataVolume();
+            TXOK += providers[name].dataVolume().TXOK;
+            RXOK += providers[name].dataVolume().RXOK;
 
         }
     }
 
-    return dataStats;
+    return {
+        TXOK: TXOK,
+        RXOK: RXOK
+    };
+
 };
 
 
@@ -419,8 +431,6 @@ function configureAws(config, file, cb) {
     require('folders-aws').isConfigValid(config, function (err, awsConfig) {
 
         if (err) {
-
-            console.log(err);
             return cb(err);
         } else {
             return cb(null, awsConfig);
