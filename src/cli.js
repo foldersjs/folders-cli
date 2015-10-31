@@ -28,6 +28,9 @@ var Server = require('folders-http/src/standaloneServer');
 var Fio = require('folders');
 //Used to wrap a provider in Nodejs-compatible mode!
 var FolderFs = require('folders/src/fs');
+var publicIp = require('public-ip');
+
+
 //var Ftp = require('folders-ftp');
 var Union = Fio.union();
 
@@ -37,6 +40,7 @@ var configMapper = {
     'ssh': configureSsh,
     'ftp': configureFtp
 };
+
 
 
 
@@ -90,13 +94,16 @@ Cli.prototype.serverFriendly = function (argv, cb) {
     argv['client'] = argv['client'] || argv['_'][1] || false;
     argv['compress'] = argv['compress'] || false;
     argv['log'] = argv['log'] || false;
-    argv['listen'] = argv['listen'] || 8090;
+    argv['listen'] = argv['listen'] || process.env.PORT || 8090;
+    argv['host'] = process.env.HOST || "0.0.0.0";
+
     argv['mode'] = argv['mode'] || 'DEBUG';
 
     if (argv['mode'] == 'DEBUG') {
 
         self.providerFriendly(argv, function (err, serverbackend) {
             if (err) {
+
 
 
                 return cb(err);
@@ -106,26 +113,31 @@ Cli.prototype.serverFriendly = function (argv, cb) {
             // make a call to remote host to mount this cli instance
 
             if (CLIENT_URL) {
-                var host = 'localhost';
-                var port = argv['listen'];
-                var uri = CLIENT_URL + '/mount?instance=' + host + '&port=' + port;
-                require('http').get(uri, function (res) {
-                    var content = '';
-                    res.on('data', function (d) {
-                        content += d.toString();
-                    });
+                publicIp.v4(function (err, ip) {
+
+                    var host = process.env.NODE_ENV == 'production' ? ip : argv['host'];
+                    var port = argv['listen'];
+                    var uri = CLIENT_URL + '/mount?instance=' + host + '&port=' + port;
+                    require('http').get(uri, function (res) {
+                        var content = '';
+                        res.on('data', function (d) {
+                            content += d.toString();
+                        });
 
 
-                    res.on('end', function () {
-                        var instanceId = JSON.parse(content).instance_id;
-                        var instanceUrl = CLIENT_URL + '/instance/' + instanceId;
-                        console.log("Browse files here -->" + instanceUrl);
-                        return cb();
-                    });
+                        res.on('end', function () {
+                            var instanceId = JSON.parse(content).instance_id;
+                            var instanceUrl = CLIENT_URL + '/instance/' + instanceId;
+                            console.log("Browse files here -->" + instanceUrl);
+                            return cb();
+                        });
 
-                    res.on('err', function (err) {
+                        res.on('err', function (err) {
 
-                        return cb(err);
+                            return cb(err);
+                        });
+
+
                     });
 
 
@@ -354,6 +366,7 @@ Cli.prototype.providerFriendly = function (argv, cb) {
         if (err) {
 
 
+
             return cb(err);
         }
         serverbackend = Fio.provider(provider, result).create('prefix');
@@ -398,6 +411,7 @@ Cli.prototype.netstat = function (provider) {
 
         }
     }
+
 
     return {
         TXOK: TXOK,
