@@ -28,8 +28,6 @@ var Server = require('folders-http/src/standaloneServer');
 var Fio = require('folders');
 //Used to wrap a provider in Nodejs-compatible mode!
 var FolderFs = require('folders/src/fs');
-var publicIp = require('public-ip');
-
 
 //var Ftp = require('folders-ftp');
 var Union = Fio.union();
@@ -40,13 +38,6 @@ var configMapper = {
     'ssh': configureSsh,
     'ftp': configureFtp
 };
-
-
-
-
-var CLIENT_URL = 'http://45.55.145.52:8000';
-
-
 
 var Cli = function (argv) {
     var self = this;
@@ -59,9 +50,6 @@ Cli.prototype.startModule = function (argv, cb) {
     argv = argv || cli(process.argv.slice(2));
     var module = argv['_'][0];
     switch (true) {
-
-
-
     case (module == 'forward'):
         self.forwardFriendly(argv)
         break;
@@ -103,51 +91,11 @@ Cli.prototype.serverFriendly = function (argv, cb) {
 
         self.providerFriendly(argv, function (err, serverbackend) {
             if (err) {
-
-
-
                 return cb(err);
             }
             var server = new Server(argv, serverbackend);
-
-            // make a call to remote host to mount this cli instance
-
-            if (CLIENT_URL) {
-                publicIp.v4(function (err, ip) {
-
-                    var host = process.env.NODE_ENV == 'production' ? ip : argv['host'];
-                    var port = argv['listen'];
-                    var uri = CLIENT_URL + '/mount?instance=' + host + '&port=' + port;
-                    require('http').get(uri, function (res) {
-                        var content = '';
-                        res.on('data', function (d) {
-                            content += d.toString();
-                        });
-
-
-                        res.on('end', function () {
-                            var instanceId = JSON.parse(content).instance_id;
-                            var instanceUrl = CLIENT_URL + '/instance/' + instanceId;
-                            console.log("Browse files here -->" + instanceUrl);
-                            return cb();
-                        });
-
-                        res.on('err', function (err) {
-
-                            return cb(err);
-                        });
-
-
-                    });
-
-
-                });
-
-
-            } else {
-                return cb();
-            }
-
+            // Connecting this host with Java services at remote address 
+            server.mountInstance(cb);
         });
 
     }
@@ -495,9 +443,6 @@ if (require.main.filename === __filename) {
             //throw new Error(err);
         }
         // place holder ;
-
-
-
     });
 
 }
