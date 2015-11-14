@@ -7,14 +7,18 @@
 
     // First application
     {
-      name      : "API",
-      script    : "app.js",
+      name      : "folders-cli",
+      script    : "./src/cli.js",
       env: {
-        COMMON_VARIABLE: "true"
+        NODE_ENV: "production"
       },
       env_production : {
-        NODE_ENV: "production"
-      }
+        
+		  
+      },
+      env_dev : {
+       
+      }		
     },
 
     
