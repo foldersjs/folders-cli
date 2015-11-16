@@ -79,11 +79,12 @@ Cli.prototype.standaloneFriendly = function (argv, cb) {
 Cli.prototype.serverFriendly = function (argv, cb) {
     var self = this;
     argv = argv || {};
+	argv['clientUri'] = argv['clientUri']; 
     argv['client'] = argv['client'] || argv['_'][1] || false;
     argv['compress'] = argv['compress'] || false;
     argv['log'] = argv['log'] || false;
-    argv['listen'] = argv['listen'] || process.env.PORT || 8090;
-    argv['host'] = process.env.HOST || "0.0.0.0";
+    argv['listen'] = argv['listen'];
+    argv['host'] = "0.0.0.0";
 
     argv['mode'] = argv['mode'] || 'DEBUG';
 
@@ -95,27 +96,12 @@ Cli.prototype.serverFriendly = function (argv, cb) {
             }
             var server = new Server(argv, serverbackend);
             // Connecting this host with Java services at remote address 
-            server.mountInstance(cb);
+            server.mountInstance(cb,argv['clientUri']);
         });
 
     }
 
 
-    /*
-		if (argv['mode'] == 'LIVE'){
-			
-			// live or provider mode not correctly implemented yet 
-			
-			argv['backend'] = argv['backend'] || 'local' ;
-	
-	
-			// using 'local' for backend now.neglecting backend 
-			var Local = Fio.local();
-	
-	
-			var backend = new Local();
-			var server = new Server(argv,backend);
-		*/
 };
 
 
@@ -344,6 +330,7 @@ Cli.prototype.dump = function () {
 
 };
 
+/*
 Cli.prototype.netstat = function (provider) {
     var TXOK = 0;
     var RXOK = 0;
@@ -367,6 +354,7 @@ Cli.prototype.netstat = function (provider) {
     };
 
 };
+*/
 
 
 function configureFtp(config, file, cb) {
@@ -432,6 +420,7 @@ function configureLocal(config, file, cb) {
 };
 
 if (require.main.filename === __filename) {
+	console.log('Current directory: ' + process.cwd());
     // this module is the main entry point for this nodejs process
     // compatibility for commands like node cli standalone --provider=ftp
     var service = new Cli();
@@ -445,6 +434,20 @@ if (require.main.filename === __filename) {
         // place holder ;
     });
 
+}else if (require('path').basename(require.main.filename) == 'app.js'){
+
+	
+	var service = new Cli();
+	var config=require('../config.json')[process.env.NODE_ENV || 'development'];
+	 service.startModule(config, function (err, data) {
+
+        if (err) {
+
+            //throw new Error(err);
+        }
+        // place holder ;
+    });
+	
 }
 
 module.exports = Cli;

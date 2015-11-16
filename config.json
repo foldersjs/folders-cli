@@ -1,32 +1,15 @@
 {
 
-	'production'  :{
 	
+	"development" :{
 		"listen"   : 8090,
-		"client"   : "45.55.145.52:8000",
+		"client"   : "http://45.55.145.52:8000",
 		"compress" : false,
 		"log"      : false,
 		"provider" : "aws",
 		"_"        : ["standalone"]
 		
 	},
-	"dev" :{
-		"listen"   : 8090,
-		"client"   : "45.55.145.52:8000",
-		"compress" : false,
-		"log"      : false,
-		"provider" : "aws",
-		"_"        : ["standalone"]
-		
-	},
-	"staging":{
-		"listen"   : 8090,
-		"client"   : "45.55.145.52:8000",
-		"compress" : false,
-		"log"      : false,
-		"provider" : "aws", 
-		"_"        : ["standalone"]
-		
-	}
+	
 	
 } 

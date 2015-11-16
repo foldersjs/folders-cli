@@ -8,18 +8,19 @@
     // First application
     {
       name      : "folders-cli",
-      script    : "./src/cli.js",
+      script    : "app.js",
       env: {
-        NODE_ENV: "production"
+        HOST: "remote",
+		NODE_ENV : "development"
       },
       env_production : {
         
 		  
       },
-      env_dev : {
+      env_development : {
        
       }		
-    },
+    }
 
     
   ],
@@ -29,24 +30,14 @@
    * http://pm2.keymetrics.io/docs/usage/deployment/
    */
   deploy : {
-    production : {
-      user : "root",
-      host : "212.47.229.3",
+    development : {
+      key: ".pem key path",
+      user : "ubuntu",
+      host : "aws instance public ip",
       ref  : "origin/master",
       repo : "https://github.com/foldersjs/folders-cli.git",
-      path : "/var/www/production",
-      "post-deploy" : "cd source ; npm install ; pm2 startOrRestart ecosystem.json --env production"
-    },
-    dev : {
-      user : "root",
-      host : "212.47.229.3",
-      ref  : "origin/master",
-      repo : "https://github.com/foldersjs/folders-cli.git",
-      path : "/var/www/development",
-      "post-deploy" : "npm install ; pm2 startOrRestart ecosystem.json --env dev",
-      env  : {
-        NODE_ENV: "dev"
-      }
+      path : "~/development",
+      "post-deploy" : "npm install ; pm2 startOrRestart ecosystem.json --env development"
     }
   }
 }
