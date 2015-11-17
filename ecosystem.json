@@ -11,14 +11,16 @@
       script    : "app.js",
       env: {
         HOST: "remote",
-		NODE_ENV : "development"
+		NODE_ENV : "production" 
+	
       },
       env_production : {
         
-		  
+		NODE_ENV : "production"  
       },
       env_development : {
-       
+	  
+		NODE_ENV : "development"
       }		
     }
 
@@ -31,13 +33,23 @@
    */
   deploy : {
     development : {
-      key: ".pem key path",
+      key: "/home/user/cli.pem",
       user : "ubuntu",
       host : "aws instance public ip",
       ref  : "origin/master",
       repo : "https://github.com/foldersjs/folders-cli.git",
       path : "~/development",
       "post-deploy" : "npm install ; pm2 startOrRestart ecosystem.json --env development"
-    }
+    },
+  production : {
+      key: "/home/user/cli.pem",
+      user : "ubuntu",
+      host : "aws instance public ip",
+      ref  : "origin/master",
+      repo : "https://github.com/foldersjs/folders-cli.git",
+      path : "~/production",
+      "post-deploy" : "npm install ; pm2 startOrRestart ecosystem.json --env production"
+    }	
+    	
   }
 }
