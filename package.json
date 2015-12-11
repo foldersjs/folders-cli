@@ -21,9 +21,11 @@
     "folders-hdfs": "git://github.com/foldersjs/folders-hdfs.git#master",
     "folders-http": "git://github.com/foldersjs/folders-http.git#master",
     "folders-ssh": "git://github.com/foldersjs/folders-ssh.git#master",
+    "mime": "^1.3.4",
     "minimist": "~1.1.0",
     "public-ip": "^1.1.0",
-	"vorpal": "^1.3.34"
+    "request": "^2.67.0",
+    "vorpal": "^1.3.34"
   },
   "devDependencies": {
     "gulp": "~3.8.10",
