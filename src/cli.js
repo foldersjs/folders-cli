@@ -79,7 +79,7 @@ Cli.prototype.standaloneFriendly = function (argv, cb) {
 Cli.prototype.serverFriendly = function (argv, cb) {
     var self = this;
     argv = argv || {};
-	argv['clientUri'] = argv['clientUri']; 
+    argv['clientUri'] = argv['clientUri'];
     argv['client'] = argv['client'] || argv['_'][1] || false;
     argv['compress'] = argv['compress'] || false;
     argv['log'] = argv['log'] || false;
@@ -87,6 +87,9 @@ Cli.prototype.serverFriendly = function (argv, cb) {
     argv['host'] = "0.0.0.0";
 
     argv['mode'] = argv['mode'] || 'DEBUG';
+
+    argv['secured'] = argv['secured'] || false;
+    argv['userPublicKey'] = argv['userPublicKey'];
 
     if (argv['mode'] == 'DEBUG') {
 

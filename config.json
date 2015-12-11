@@ -7,6 +7,8 @@
 		"compress" : false,
 		"log"      : false,
 		"provider" : "aws",
+		"secured"  : true,
+		"userPublicKey" : "=====Your Key Get From 'Security settings' Page====",
 		"_"        : ["standalone"]
 		
 	},
@@ -16,6 +18,7 @@
 		"compress" : false,
 		"log"      : false,
 		"provider" : "aws",
+		"secured"  : false,
 		"_"        : ["standalone"]
 		
 	}
