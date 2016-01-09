@@ -81,15 +81,17 @@ Cli.prototype.serverFriendly = function (argv, cb) {
     argv = argv || {};
     argv['clientUri'] = argv['clientUri'];
     argv['client'] = argv['client'] || argv['_'][1] || false;
+    argv['clientPort'] = argv['clientPort'] || 8000;
     argv['compress'] = argv['compress'] || false;
     argv['log'] = argv['log'] || false;
-    argv['listen'] = argv['listen'];
-    argv['host'] = "0.0.0.0";
-
+    argv['listen'] = argv['listen'] || 8080;
+    argv['host'] = "0.0.0.0"; 
     argv['mode'] = argv['mode'] || 'DEBUG';
 
     argv['secured'] = argv['secured'] || false;
     argv['userPublicKey'] = argv['userPublicKey'];
+    
+    console.log('serverFriendly', argv);
 
     if (argv['mode'] == 'DEBUG') {
 
