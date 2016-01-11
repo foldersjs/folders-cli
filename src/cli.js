@@ -36,7 +36,8 @@ var configMapper = {
     'local': configureLocal,
     'aws': configureAws,
     'ssh': configureSsh,
-    'ftp': configureFtp
+    'ftp': configureFtp,
+    'hdfs': configureHdfs
 };
 
 var Cli = function (argv) {
@@ -308,7 +309,7 @@ Cli.prototype.providerFriendly = function (argv, cb) {
 
             return cb(err);
         }
-        serverbackend = Fio.provider(provider, result).create('prefix');
+        serverbackend = Fio.provider(provider, result).create('/folders.io_0:'+provider+'/');
         // if  backend not mounted fusing the backend with other mounts
         if (!self.union.fuse[provider])
             self.union.fuse[provider] = serverbackend;
@@ -395,6 +396,18 @@ function configureAws(config, file, cb) {
 
 };
 
+function configureHdfs(config, file, cb) {
+	file = file || 'hdfs.json';
+	config = config || require("../" + file);
+
+	require('folders-hdfs').isConfigValid(config, function(err, hdfsConfig) {
+		if (err) {
+			return cb(err);
+		} else {
+			return cb(null, hdfsConfig);
+		}
+	});
+}
 
 function configureSsh(config, file, cb) {
 
