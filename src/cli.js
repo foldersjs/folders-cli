@@ -37,7 +37,8 @@ var configMapper = {
     'aws': configureAws,
     'ssh': configureSsh,
     'ftp': configureFtp,
-    'hdfs': configureHdfs
+    'hdfs': configureHdfs,
+    'presto': configurePresto
 };
 
 var Cli = function (argv) {
@@ -395,6 +396,19 @@ function configureAws(config, file, cb) {
 
 
 };
+
+function configurePresto(config, file, cb) {
+	file = file || 'presto.json';
+	config = config || require("../" + file);
+
+	require('folders-presto').isConfigValid(config, function(err, prestoConfig){
+		if (err){
+			cb(err);
+		} else {
+			return cb(null, prestoConfig);
+		}
+	});
+}
 
 function configureHdfs(config, file, cb) {
 	file = file || 'hdfs.json';

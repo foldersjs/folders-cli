@@ -1,0 +1,6 @@
+{
+    "host" : "130.211.140.182",
+    "port" : "18081",
+    "catalog" : "hive",
+    "schema" : "default"
+}
