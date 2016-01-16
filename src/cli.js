@@ -87,7 +87,7 @@ Cli.prototype.serverFriendly = function (argv, cb) {
     argv['compress'] = argv['compress'] || false;
     argv['log'] = argv['log'] || false;
     argv['listen'] = argv['listen'] || 8080;
-    argv['host'] = "0.0.0.0"; 
+    argv['host'] = argv['host'] || "0.0.0.0";
     argv['mode'] = argv['mode'] || 'DEBUG';
 
     argv['secured'] = argv['secured'] || false;
