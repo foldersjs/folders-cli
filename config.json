@@ -1,16 +1,15 @@
-{
-
-	
+{	
 	"development" :{
-		"listen"   : 8090,
-		"clientUri": "http://45.55.145.52:8000",
+		"listen"   : 9999,
+		"client"	: "../client.folders.io",
 		"compress" : false,
 		"log"      : false,
 		"provider" : "aws",
 		"secured"  : true,
-		"userPublicKey" : "=====Your Key Get From 'Security settings' Page====",
-		"_"        : ["standalone"]
-		
+		"_"        : ["standalone"],
+		"persisted": true, 
+		"serverPublicKey": "741dcd8c83649e6b282fd1a41bb58a675fd82ee64da31a9619c36156a0bb2249",
+		"serverSecretKey": "5cf7e8c519a5f09336640a190e4a004fc4c101d52ac6c497459fb314d1cd74d0"
 	},
 	"production" :{
 		"listen"   : 8090,
@@ -20,8 +19,5 @@
 		"provider" : "aws",
 		"secured"  : false,
 		"_"        : ["standalone"]
-		
 	}
-	
-	
 } 
