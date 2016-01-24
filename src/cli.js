@@ -81,7 +81,7 @@ Cli.prototype.standaloneFriendly = function (argv, cb) {
 Cli.prototype.serverFriendly = function (argv, cb) {
     var self = this;
     argv = argv || {};
-    argv['clientUri'] = argv['clientUri'];
+    //argv['clientUri'] = argv['clientUri'];
     argv['client'] = argv['client'] || argv['_'][1] || false;
     argv['clientPort'] = argv['clientPort'] || 8000;
     argv['compress'] = argv['compress'] || false;
@@ -102,8 +102,16 @@ Cli.prototype.serverFriendly = function (argv, cb) {
                 return cb(err);
             }
             var server = new Server(argv, serverbackend);
-            // Connecting this host with Java services at remote address 
-            server.mountInstance(cb,argv['clientUri']);
+            // Connecting this host with Java services at remote address
+            
+            if (argv['clientUri']) {
+                server.mountInstance(cb,argv['clientUri']);    
+            }
+            else {
+                console.log("no clientUri, running Intranet mode!");
+                cb();
+            }
+            
         });
 
     }
@@ -294,29 +302,73 @@ Cli.prototype.providerFriendly = function (argv, cb) {
     // supporting cd ls cp  commands
     var self = this,
         provider;
-    argv['provider'] = argv['provider'] || 'aws';
+    argv['provider'] = argv['provider'] || 'local';
+    /*
     argv['provider'] = argv['provider'].split(':')[0];
     argv['shareId'] = argv['provider'].split(':')[1];
+    */
 
     provider = argv['provider'];
-
-    var serverbackend;
-
-    configMapper[provider](null, argv[provider + "-config-file"], function (err, result) {
-
-        if (err) {
-
-
-
-            return cb(err);
-        }
-        serverbackend = Fio.provider(provider, result).create('/folders.io_0:'+provider+'/');
-        // if  backend not mounted fusing the backend with other mounts
-        if (!self.union.fuse[provider])
-            self.union.fuse[provider] = serverbackend;
-        cb(null, serverbackend);
-
-    });
+    var providers = {};
+    
+    if (typeof(provider) == 'object') {
+        console.log('multiple providers found');
+        providers = provider;
+    }
+    else if (typeof(provider) == 'string') {
+        //single provider, remap to the new data type!?
+        providers[provider] =  {"type": provider, "configFile": argv[provider + "-config-file"]};
+    }
+    console.log('providers:', providers);
+    
+    var providerCount = Object.keys(providers).length;
+    console.log('providerCount: ', providerCount);
+    
+    //var serverbackend;
+    
+    var count = 0;
+    
+    //   now acts like a pre-checking of the backend
+    for (var key in providers) {
+        (function(key) { //create a function scope
+            var providerName = key;
+            var provider = providers[providerName].type;
+            var configFile = providers[providerName].configFile;
+            console.log('provider: ', provider);
+            
+            configMapper[provider](null, configFile, function (err, result) {
+                console.log('configMapper ' + provider + ' result: ', result);
+                count+=1;
+                
+                if (err) {
+                    return cb(err);
+                }
+                
+                //seems like prefix is not used at the moment!
+                serverbackend = Fio.provider(provider, result).create('/folders.io_0:'+provider+'/');
+                
+                //if  backend not mounted fusing the backend with other mounts
+                //console.log('add to union: ', serverbackend.prefix)
+                if (!self.union.fuse[providerName])
+                    self.union.fuse[providerName] = serverbackend;
+                    
+                if (count == providerCount){
+                    console.log("all providers initialized!");
+                    cb(null, self.union);
+                }
+                
+                //if (!self.union.fuse[serverbackend.prefix])
+                //    self.union.fuse[serverbackend.prefix] = serverbackend;
+                
+                //cb(null, serverbackend);
+                
+                //FIXME: do not callback here yet but should wait for all mounts to be ready first!
+                //Using promise!?
+                //cb(null, self.union);
+            });
+        })(key);
+    }
+    
 
 };
 
@@ -374,7 +426,6 @@ function configureFtp(config, file, cb) {
 
             return cb(err);
         }
-
         backend = Fio.provider(provider, result).create(provider);
         config.backend = backend;
         return cb(null, config);
