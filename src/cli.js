@@ -459,19 +459,40 @@ function configurePresto(config, file, cb) {
 			return cb(null, prestoConfig);
 		}
 	});
+
 }
 
 function configureHdfs(config, file, cb) {
-	file = file || 'hdfs.json';
-	config = config || require("../" + file);
+    file = file || 'hdfs.json';
+    config = config || require("../" + file);
+  
+    require('folders-hdfs').isConfigValid( config,function(err, hdfsConfig) {
+        if (err) {
+          return cb(err);
+        }
 
-	require('folders-hdfs').isConfigValid(config, function(err, hdfsConfig) {
-		if (err) {
-			return cb(err);
-		} else {
-			return cb(null, hdfsConfig);
-		}
-	});
+        // we want to start a embedded proxy when init
+        if (hdfsConfig.startEmbeddedProxy && hdfsConfig.backend && hdfsConfig.backend.provider) {
+          console.log('hdfsConfig.backend, ', hdfsConfig.backend);
+          configMapper[hdfsConfig.backend.provider](hdfsConfig.backend.options, null, function(err, result) {
+
+            if (err) {
+              return cb(err);
+            }
+
+            console.log('config hdfs backend folders,');
+            var backend = Fio.provider(hdfsConfig.backend.provider, result).create(
+                '/folders.io_hdfs_0:' + hdfsConfig.backend.provider + '/');
+            console.log(backend);
+            hdfsConfig.backend.instance = backend;
+
+            return cb(null, hdfsConfig);
+
+          });
+        } else {
+          return cb(null, hdfsConfig);
+        }
+    });
 }
 
 function configureSsh(config, file, cb) {

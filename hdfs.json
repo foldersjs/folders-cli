@@ -1,4 +1,8 @@
 {
-	"baseurl": "http://45.55.223.28/webhdfs/v1/data/",
-	"username": "hdfs"
+	"baseurl": "http://localhost:40050/webhdfs/v1/",
+	"username": "hdfs",
+	"startEmbeddedProxy":true,
+	"backend": {
+	   "provider": "aws"
+	}
 }
