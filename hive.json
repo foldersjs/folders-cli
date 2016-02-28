@@ -1,0 +1,7 @@
+{
+  "host" : "130.211.140.182",
+  "port" : 10000, 
+  "username" : "anonymous",
+  "password" : "",
+  "auth" : "nosasl"
+}

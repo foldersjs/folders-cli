@@ -1,7 +1,7 @@
 {
 	"baseurl": "http://localhost:40050/webhdfs/v1/",
 	"username": "hdfs",
-	"startEmbeddedProxy":true,
+	"startEmbeddedProxy":false,
 	"backend": {
 	   "provider": "aws"
 	}

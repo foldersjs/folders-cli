@@ -21,6 +21,7 @@
     "folders-hdfs": "git://github.com/foldersjs/folders-hdfs.git#master",
     "folders-http": "git://github.com/foldersjs/folders-http.git#master",
     "folders-ssh": "git://github.com/foldersjs/folders-ssh.git#master",
+    "folders-hive" : "git://github.com/foldersjs/folders-hive.git#master",
     "folders-presto": "git://github.com/foldersjs/folders-presto.git#master",
     "mime": "^1.3.4",
     "minimist": "~1.1.0",

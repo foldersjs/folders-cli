@@ -38,6 +38,7 @@ var configMapper = {
     'ssh': configureSsh,
     'ftp': configureFtp,
     'hdfs': configureHdfs,
+    'hive' : configureHive,
     'presto': configurePresto
 };
 
@@ -444,9 +445,20 @@ function configureAws(config, file, cb) {
             return cb(null, awsConfig);
         }
     })
-
-
 };
+
+function configureHive(config, file, cb) {
+  file = file || 'hive.json';
+  config = config || require("../" + file);
+
+  require('folders-hive').isConfigValid(config, function(err, hiveConfig){
+    if (err){
+      cb(err);
+    } else {
+      return cb(null, hiveConfig);
+    }
+  });
+}
 
 function configurePresto(config, file, cb) {
 	file = file || 'presto.json';
