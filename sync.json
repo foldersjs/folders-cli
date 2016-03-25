@@ -1,0 +1,41 @@
+{
+	"mounts": 
+	{
+		"source": 
+		{
+			"module": "aws",
+			"dir": "/S3/us-east-1/foldersio",
+			"opts": 
+			{
+				"accessKeyId": "=== AWS KEY ===",
+				"secretAccessKey": "=== AWS ACCESS KEY ===",
+				"service": "S3",
+				"region": "us-east-1",
+				"bucket": "foldersio",
+				"partSize": 10485760,
+				"queueSize": 5
+			}
+		},
+
+		"destination": 
+		{
+			"module": "hdfs",
+			"dir": "/",
+			"opts": 
+			{
+				"baseurl": "=== WEBHDFS URL ===",
+				"username": "hdfs"
+			}
+		}
+	},
+
+	"options": 
+	{
+		"cronTime": "*/15 * * * *",
+		"concurrency": 10,
+		"filter": "*.txt",
+		"ignoreCase": true,
+		"compareSize": true,
+		"ignoreDirPath": false
+	}
+}

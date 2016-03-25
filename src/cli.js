@@ -31,6 +31,7 @@ var FolderFs = require('folders/src/fs');
 
 //var Ftp = require('folders-ftp');
 var Union = Fio.union();
+var SyncUnion = Fio.syncUnion();
 
 var configMapper = {
     'local': configureLocal,
@@ -65,6 +66,10 @@ Cli.prototype.startModule = function (argv, cb) {
 
     case (module == 'folders-http'):
         self.httpFriendly(argv);
+        break;
+
+    case (module == 'sync'):
+        self.sync(argv);
         break;
     }
 
@@ -156,6 +161,43 @@ Cli.prototype.forwardFriendly = function (argv) {
         forward.startProxy()
     }
 };
+
+Cli.prototype.sync = function(argv) {
+
+    console.log('sync start in Cli...');
+    var file = 'sync.json';
+    var config = require("../" + file);
+    var sourceProvider = config.mounts.source;
+    var destProvider = config.mounts.destination;
+
+    // Provider opts check,
+    // if not specified the provider opts, we read from specified config file or default config file.
+    configMapper[sourceProvider.module](sourceProvider.opts, sourceProvider.configFile, function(err, sourceOpts) {
+      sourceProvider.opts = sourceOpts;
+
+      configMapper[destProvider.module](destProvider.opts, destProvider.configFile, function(err, destOpts) {
+        destProvider.opts = destOpts;
+        var syncUnion = new SyncUnion(config.mounts, config.options);
+
+        if (config.options.cronTime) {
+          console.log('start schedule sync...');
+          // schedule Sync files. eg, "*/1 * * * *", every 1 minutes.
+          syncUnion.scheduleSync(config.options.cronTime);
+        } else {
+          console.log('start one time sync...');
+          // one time files sync.
+          syncUnion.sync(function(err, result) {
+            if (err) {
+              return console.log('union sync error: ', err);
+            }
+
+            console.log('union sync success, ', result);
+          });
+        }
+
+      });
+    });
+}
 
 Cli.prototype.cd = function (path) {
 
